@@ -5,9 +5,9 @@ Aplica la capa SQL gerencial de Control de Gestión RT.
 El proceso:
 1. Abre la base SQLite indicada por RR_DB_PATH o --db-path.
 2. Genera un backup consistente con la API de backup de SQLite.
-3. Aplica los archivos SQL 01..07 en orden.
+3. Aplica los archivos SQL 01..08 en orden.
 4. Reconstruye las tablas materializadas y vistas gerenciales.
-5. Ejecuta controles mínimos y reporta tiempos.
+5. Ejecuta controles de integridad, participación y cuadre.
 
 No modifica los Excel de origen ni elimina tablas raw.
 """
@@ -42,6 +42,14 @@ REQUIRED_VIEWS = {
     "v_rr_catastro_local_semana",
     "v_rr_dashboard_qa",
     "v_rr_dashboard_metadata",
+    "v_rr_region_semanal",
+    "v_rr_region_modalidad_semanal",
+    "v_rr_region_capacidad_semanal",
+    "v_rr_retail_mensual",
+    "v_rr_region_mensual",
+    "v_rr_modalidad_mensual",
+    "v_rr_capacidad_mensual",
+    "v_rr_gerencial_actual",
 }
 
 REQUIRED_FACTS = {
@@ -58,6 +66,13 @@ REQUIRED_FACTS = {
     "fact_rr_movimientos_asignacion",
     "fact_rr_catastro_local_semana",
     "fact_rr_dashboard_qa",
+    "fact_rr_region_semanal",
+    "fact_rr_region_modalidad_semanal",
+    "fact_rr_region_capacidad_semanal",
+    "fact_rr_retail_mensual",
+    "fact_rr_region_mensual",
+    "fact_rr_modalidad_mensual",
+    "fact_rr_capacidad_mensual",
 }
 
 
@@ -76,7 +91,7 @@ def parse_args() -> argparse.Namespace:
         "--sql-dir",
         type=Path,
         default=root / "sql",
-        help="Carpeta que contiene 01_periodos.sql ... 07_dashboard_qa.sql.",
+        help="Carpeta que contiene 01_periodos.sql ... 08_kpi_gerencial_v1.sql.",
     )
     parser.add_argument(
         "--no-backup",
@@ -112,7 +127,7 @@ def resolve_db_path(explicit: Path | None) -> Path:
 
 def discover_sql_files(sql_dir: Path) -> list[Path]:
     files = sorted(sql_dir.glob("[0-9][0-9]_*.sql"))
-    expected = [f"{number:02d}_" for number in range(1, 8)]
+    expected = [f"{number:02d}_" for number in range(1, 9)]
 
     found_prefixes = {path.name[:3] for path in files}
     missing = [prefix for prefix in expected if prefix not in found_prefixes]
@@ -134,7 +149,7 @@ def configure_connection(connection: sqlite3.Connection) -> None:
 def create_backup(db_path: Path, backup_dir: Path) -> Path:
     backup_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = backup_dir / f"rr_historico_before_route2_{stamp}.sqlite"
+    backup_path = backup_dir / f"rr_historico_before_dashboard_v1_{stamp}.sqlite"
 
     source = sqlite3.connect(db_path)
     destination = sqlite3.connect(backup_path)
@@ -181,6 +196,11 @@ def get_object_names(
     return {row[0] for row in rows}
 
 
+def scalar(connection: sqlite3.Connection, sql: str) -> int | float:
+    value = connection.execute(sql).fetchone()[0]
+    return 0 if value is None else value
+
+
 def validate_model(connection: sqlite3.Connection) -> dict[str, object]:
     views = get_object_names(connection, "view")
     tables = get_object_names(connection, "table")
@@ -192,36 +212,35 @@ def validate_model(connection: sqlite3.Connection) -> dict[str, object]:
             f"Objetos faltantes. Vistas={missing_views}; facts={missing_facts}"
         )
 
-    metadata = connection.execute(
+    metadata_cursor = connection.execute(
         "SELECT * FROM v_rr_dashboard_metadata"
-    ).fetchone()
-    metadata_columns = [
-        description[0]
-        for description in connection.execute(
-            "SELECT * FROM v_rr_dashboard_metadata"
-        ).description
-    ]
+    )
+    metadata = metadata_cursor.fetchone()
+    metadata_columns = [description[0] for description in metadata_cursor.description]
     metadata_dict = dict(zip(metadata_columns, metadata, strict=True))
 
-    positive_errors = connection.execute(
+    positive_errors = scalar(
+        connection,
         """
         SELECT COUNT(*)
         FROM v_rr_dashboard_qa
         WHERE severity = 'ERROR'
           AND affected_count > 0
-        """
-    ).fetchone()[0]
+        """,
+    )
 
-    delta_mismatches = connection.execute(
+    delta_mismatches = scalar(
+        connection,
         """
         SELECT COUNT(*)
         FROM v_rr_crecimiento_semanal
         WHERE previous_period_label IS NOT NULL
           AND qa_delta_movimientos_cuadra <> 1
-        """
-    ).fetchone()[0]
+        """,
+    )
 
-    duplicate_keys = connection.execute(
+    duplicate_keys = scalar(
+        connection,
         """
         SELECT COUNT(*)
         FROM (
@@ -235,27 +254,90 @@ def validate_model(connection: sqlite3.Connection) -> dict[str, object]:
             GROUP BY 1, 2, 3, 4
             HAVING COUNT(*) > 1
         )
+        """,
+    )
+
+    regional_duplicate_keys = scalar(
+        connection,
         """
-    ).fetchone()[0]
+        SELECT COUNT(*)
+        FROM (
+            SELECT period_label, region, COUNT(*) AS n
+            FROM fact_rr_region_semanal
+            GROUP BY period_label, region
+            HAVING COUNT(*) > 1
+        )
+        """,
+    )
 
-    if positive_errors:
-        raise RuntimeError(
-            f"QA contiene {positive_errors} controles ERROR con afectados."
+    region_volume_mismatches = scalar(
+        connection,
+        """
+        SELECT COUNT(*)
+        FROM (
+            SELECT
+                g.period_label,
+                g.volumen_operativo AS volumen_global,
+                SUM(r.volumen_operativo) AS volumen_regional
+            FROM v_rr_resumen_global AS g
+            INNER JOIN v_rr_region_semanal AS r
+                ON r.period_label = g.period_label
+            GROUP BY g.period_label, g.volumen_operativo
+            HAVING ABS(g.volumen_operativo - SUM(r.volumen_operativo)) > 0.0001
         )
-    if delta_mismatches:
-        raise RuntimeError(
-            f"Existen {delta_mismatches} períodos cuyo delta no cuadra."
-        )
-    if duplicate_keys:
-        raise RuntimeError(
-            f"Existen {duplicate_keys} duplicados en la clave LOCAL/CLIENTE."
-        )
+        """,
+    )
 
-    return {
-        **metadata_dict,
+    region_share_mismatches = scalar(
+        connection,
+        """
+        SELECT COUNT(*)
+        FROM (
+            SELECT period_label, SUM(participacion_volumen_pct) AS share
+            FROM v_rr_region_semanal
+            GROUP BY period_label
+            HAVING ABS(SUM(participacion_volumen_pct) - 100.0) > 0.01
+        )
+        """,
+    )
+
+    modality_share_mismatches = scalar(
+        connection,
+        """
+        SELECT COUNT(*)
+        FROM (
+            SELECT month_label, SUM(participacion_carga_cierre_pct) AS share
+            FROM v_rr_modalidad_mensual
+            GROUP BY month_label
+            HAVING ABS(SUM(participacion_carga_cierre_pct) - 100.0) > 0.01
+        )
+        """,
+    )
+
+    monthly_rows = scalar(
+        connection,
+        "SELECT COUNT(*) FROM v_rr_capacidad_mensual",
+    )
+
+    failures = {
         "positive_error_checks": positive_errors,
         "delta_mismatches": delta_mismatches,
         "duplicate_local_client_keys": duplicate_keys,
+        "duplicate_region_keys": regional_duplicate_keys,
+        "region_volume_mismatches": region_volume_mismatches,
+        "region_share_mismatches": region_share_mismatches,
+        "modality_share_mismatches": modality_share_mismatches,
+    }
+    active_failures = {key: value for key, value in failures.items() if value}
+    if active_failures:
+        raise RuntimeError(f"Validación gerencial fallida: {active_failures}")
+    if monthly_rows <= 0:
+        raise RuntimeError("La vista mensual de capacidad no contiene registros.")
+
+    return {
+        **metadata_dict,
+        **failures,
+        "monthly_capacity_rows": monthly_rows,
     }
 
 
