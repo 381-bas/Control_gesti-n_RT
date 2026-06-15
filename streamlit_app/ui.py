@@ -16,19 +16,30 @@ APP_CSS = """
     [data-testid="stSidebar"] * { color: #f9fafb; }
     [data-testid="stSidebar"] .stSelectbox label,
     [data-testid="stSidebar"] .stRadio label { color: #d1d5db !important; }
-    .block-container { max-width: 1500px; padding-top: 1.3rem; padding-bottom: 3rem; }
+    .block-container { max-width: 1540px; padding-top: 1.2rem; padding-bottom: 3rem; }
     .rt-eyebrow { color: #64748b; font-size: .78rem; letter-spacing: .08em;
         text-transform: uppercase; font-weight: 700; margin-bottom: .15rem; }
     .rt-title { color: #0f172a; font-size: 2rem; line-height: 1.15;
         font-weight: 760; margin: 0 0 .25rem 0; }
     .rt-subtitle { color: #64748b; font-size: .95rem; margin-bottom: 1.1rem; }
     .rt-section { color: #0f172a; font-size: 1.15rem; font-weight: 720;
-        margin-top: .35rem; margin-bottom: .25rem; }
-    .rt-note { color: #64748b; font-size: .82rem; }
-    [data-testid="stMetric"] { background: white; border: 1px solid #e2e8f0;
-        padding: .85rem 1rem; border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
-    [data-testid="stMetricLabel"] { color: #64748b; font-weight: 650; }
-    [data-testid="stMetricValue"] { color: #0f172a; }
+        margin-top: .55rem; margin-bottom: .25rem; }
+    .rt-note { color: #64748b; font-size: .82rem; margin-bottom: .55rem; }
+    .rt-kpi-card { background: #ffffff; border: 1px solid #e2e8f0;
+        padding: .9rem 1rem; border-radius: 12px; min-height: 112px;
+        box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+    .rt-kpi-label { color: #64748b; font-size: .78rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .03em; }
+    .rt-kpi-value { color: #0f172a; font-size: 1.75rem; font-weight: 760;
+        line-height: 1.25; margin-top: .15rem; }
+    .rt-kpi-note { color: #64748b; font-size: .76rem; line-height: 1.25;
+        margin-top: .2rem; }
+    .rt-fact-box { background: #ffffff; border: 1px solid #e2e8f0;
+        border-left: 4px solid #2563eb; padding: .85rem 1rem;
+        border-radius: 10px; margin-bottom: .7rem; }
+    .rt-fact-title { color: #0f172a; font-size: .86rem; font-weight: 750;
+        margin-bottom: .18rem; }
+    .rt-fact-text { color: #475569; font-size: .84rem; line-height: 1.45; }
     div[data-testid="stDataFrame"] { background: white; border-radius: 12px;
         border: 1px solid #e2e8f0; overflow: hidden; }
     .rt-status-ok { display:inline-block; padding:.25rem .55rem; border-radius:999px;
@@ -88,18 +99,10 @@ def metric(
     delta_kind: str = "integer",
     help_text: str | None = None,
 ) -> None:
-    value_text = (
-        format_integer(value)
-        if value_kind == "integer"
-        else format_decimal(value)
-    )
+    value_text = format_integer(value) if value_kind == "integer" else format_decimal(value)
     delta_text: str | None = None
     if delta is not None and not pd.isna(delta):
-        delta_text = (
-            format_percent(delta)
-            if delta_kind == "percent"
-            else format_integer(delta)
-        )
+        delta_text = format_percent(delta) if delta_kind == "percent" else format_integer(delta)
     st.metric(label, value_text, delta=delta_text, help=help_text)
 
 
@@ -107,7 +110,7 @@ def base_figure(fig: go.Figure, height: int = 380) -> go.Figure:
     fig.update_layout(
         template="plotly_white",
         height=height,
-        margin=dict(l=10, r=15, t=45, b=10),
+        margin=dict(l=10, r=20, t=50, b=15),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="white",
         font=dict(family="Arial, sans-serif", color="#334155", size=12),
@@ -127,5 +130,5 @@ def csv_download(df: pd.DataFrame, file_name: str, label: str = "Descargar CSV")
         data=data,
         file_name=file_name,
         mime="text/csv",
-        use_container_width=False,
+        width="content",
     )
