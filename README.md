@@ -16,7 +16,7 @@ Construir una fuente única de datos y un dashboard gerencial que permita analiz
 
 ## Fuente canónica
 
-La lógica oficial vive en **SQLite** mediante tablas materializadas y vistas SQL. Streamlit será la primera interfaz de visualización y no debe recalcular reglas de negocio.
+La lógica oficial vive en **SQLite** mediante tablas materializadas y vistas SQL. Streamlit consume esa capa y no redefine las reglas de negocio.
 
 ```text
 Excel semanales
@@ -27,7 +27,7 @@ rr_historico.sqlite
       ↓
 Facts + vistas SQL gerenciales
       ↓
-Streamlit
+Streamlit local
 ```
 
 ## Universo inicial validado
@@ -41,8 +41,6 @@ Streamlit
 ## Reglas confirmadas
 
 ### Frecuencia operativa
-
-Para cada período:
 
 ```text
 CADENA + COD KPI ONE + CLIENTE
@@ -76,6 +74,7 @@ Control_gesti-n_RT/
 ├── .gitignore
 ├── requirements.txt
 ├── .env.example
+├── .streamlit/
 ├── data/
 ├── docs/
 ├── scripts/
@@ -101,13 +100,34 @@ El proceso:
 4. ejecuta `ANALYZE`;
 5. valida objetos, unicidad, QA y cuadre de movimientos.
 
+## Ejecutar el dashboard local
+
+```powershell
+& C:\Users\basti\AppData\Local\Python\pythoncore-3.14-64\python.exe `
+  -m streamlit run streamlit_app\app.py
+```
+
+La aplicación se abre normalmente en:
+
+```text
+http://localhost:8501
+```
+
+Vistas disponibles:
+
+1. Resumen gerencial.
+2. Cadenas y clientes.
+3. Modalidades y dotación.
+4. Crecimiento y movimientos.
+5. Catastro y calidad.
+
 ## Pruebas
 
 ```powershell
-pytest -q
+python -m pytest -q
 ```
 
-Resultado de desarrollo de la Ruta 2:
+Resultado de la Ruta 2:
 
 ```text
 13 passed
@@ -115,6 +135,8 @@ Resultado de desarrollo de la Ruta 2:
 0 deltas sin cuadrar
 0 duplicados en la clave analítica LOCAL/CLIENTE
 ```
+
+La Ruta 3 agrega pruebas de las consultas utilizadas por Streamlit.
 
 Fixture gerencial:
 
@@ -126,6 +148,7 @@ Documentación técnica:
 
 ```text
 docs/RUTA_2_SQL.md
+streamlit_app/README.md
 ```
 
 ## Rendimiento
@@ -142,10 +165,10 @@ La evidencia se conserva en `contracts/performance_route2.json`.
 
 ## Seguridad de datos
 
-La base SQLite, archivos Excel y salidas con información operativa no se versionan en Git.
+La base SQLite, archivos Excel y salidas con información operativa no se versionan en Git. La aplicación local abre SQLite en modo lectura.
 
 ## Estado
 
 - **Ruta 1 · Bootstrap:** completada.
 - **Ruta 2 · Modelo SQL gerencial:** completada y validada.
-- **Próximo bloque:** MVP Streamlit conectado exclusivamente a las vistas publicadas.
+- **Ruta 3 · MVP Streamlit local:** implementada; pendiente de validación visual del usuario.
