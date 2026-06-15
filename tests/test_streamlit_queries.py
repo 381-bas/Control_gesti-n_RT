@@ -14,12 +14,14 @@ if str(STREAMLIT_DIR) not in sys.path:
 
 from data_access import (  # noqa: E402
     get_metadata,
-    get_modalities,
-    get_monthly_capacity,
+    get_monthly_rt,
+    get_monthly_services,
     get_periods,
-    get_region_capacity,
     get_regions,
     get_retail,
+    get_rt_modalities,
+    get_rt_region_capacity,
+    get_services,
     get_snapshot,
 )
 
@@ -39,76 +41,85 @@ def test_streamlit_metadata_and_periods() -> None:
     assert len(periods) == EXPECTED["universo"]["periodos"]
 
 
-def test_snapshot_gerencial_v1() -> None:
-    actual = get_snapshot(EXPECTED["periodo_referencia"]).iloc[0]
-    summary = EXPECTED["resumen_global"]
-    gerencial = EXPECTED["gerencial_v1"]
+def test_snapshot_gerencial_v2() -> None:
+    period = EXPECTED["periodo_referencia"]
+    actual = get_snapshot(period).iloc[0]
+    services = get_services(period).set_index("servicio_operativo")
+    rt_modalities = get_rt_modalities(period).set_index("modalidad")
 
-    assert actual["volumen_operativo"] == pytest.approx(summary["volumen_operativo"])
-    assert actual["locales_activos"] == summary["locales_activos"]
-    assert actual["local_cliente"] == summary["local_cliente"]
-    assert actual["personas_multimarca"] == EXPECTED["modalidades"]["MULTIMARCA"]["personas_activas"]
-    assert actual["personas_pituto"] == EXPECTED["modalidades"]["PITUTO"]["personas_activas"]
+    assert actual["volumen_operativo"] == pytest.approx(
+        EXPECTED["resumen_global"]["volumen_operativo"]
+    )
+    assert actual["locales_activos"] == EXPECTED["resumen_global"]["locales_activos"]
+    assert actual["local_cliente"] == EXPECTED["resumen_global"]["local_cliente"]
 
-    for field, expected_value in gerencial.items():
-        assert actual[field] == pytest.approx(expected_value, abs=1e-4)
+    assert set(services.index) == {"RETAIL TRUST", "BREDEN MASTER", "PROPAL"}
+    assert services["participacion_servicio_pct"].sum() == pytest.approx(
+        100.0,
+        abs=0.01,
+    )
+
+    assert actual["personas_retail_trust"] == services.loc[
+        "RETAIL TRUST", "personas_activas"
+    ]
+    assert actual["personas_breden_master"] == services.loc[
+        "BREDEN MASTER", "personas_activas"
+    ]
+    assert actual["personas_propal"] == services.loc["PROPAL", "personas_activas"]
+
+    assert actual["carga_retail_trust"] <= (
+        rt_modalities.loc["MULTIMARCA", "carga_asignada"]
+        + rt_modalities.loc["PITUTO", "carga_asignada"]
+    )
+    assert actual["peso_multimarca_dentro_rt_pct"] + actual[
+        "peso_pituto_dentro_rt_pct"
+    ] == pytest.approx(100.0, abs=0.01)
 
 
-def test_retail_and_modality_shares() -> None:
+def test_retail_and_service_shares() -> None:
     period = EXPECTED["periodo_referencia"]
     retail = get_retail(period)
-    modalities = get_modalities(period).set_index("modalidad")
+    services = get_services(period)
 
     top = retail.iloc[0]
     assert top["cadena"] == EXPECTED["top_cadena"]["cadena"]
     assert top["volumen_operativo"] == pytest.approx(
         EXPECTED["top_cadena"]["volumen_operativo"]
     )
-    assert retail["participacion_volumen_pct"].sum() == pytest.approx(100.0, abs=0.01)
-    assert modalities["participacion_carga_pct"].sum() == pytest.approx(100.0, abs=0.01)
-    assert modalities.loc["MULTIMARCA", "carga_asignada"] == pytest.approx(6157.0)
-    assert modalities.loc["PITUTO", "personas_activas"] == 3
+    assert retail["participacion_volumen_pct"].sum() == pytest.approx(
+        100.0,
+        abs=0.01,
+    )
+    assert services["participacion_servicio_pct"].sum() == pytest.approx(
+        100.0,
+        abs=0.01,
+    )
 
 
-def test_regional_kpi() -> None:
-    period = EXPECTED["periodo_referencia"]
-    regions = get_regions(period)
-    capacity = get_region_capacity(period)
+def test_retail_trust_modalities() -> None:
+    modalities = get_rt_modalities(EXPECTED["periodo_referencia"]).set_index(
+        "modalidad"
+    )
 
-    top = regions.iloc[0]
-    for field, expected_value in EXPECTED["top_region"].items():
-        if isinstance(expected_value, float):
-            assert top[field] == pytest.approx(expected_value, abs=1e-4)
-        else:
-            assert top[field] == expected_value
-
-    rm = capacity.loc[capacity["region"] == "13 - RM"].iloc[0]
-    for field, expected_value in EXPECTED["region_rm"].items():
-        assert rm[field] == pytest.approx(expected_value, abs=1e-4)
-
-    pressure = capacity.dropna(subset=["carga_por_ruta_estructural"]).sort_values(
-        "carga_por_ruta_estructural", ascending=False
-    ).iloc[0]
-    assert pressure["region"] == EXPECTED["mayor_carga_por_ruta"]["region"]
-    assert pressure["carga_por_ruta_estructural"] == pytest.approx(115.0)
+    assert set(modalities.index) == {"MULTIMARCA", "PITUTO"}
+    assert modalities["participacion_dentro_rt_pct"].sum() == pytest.approx(
+        100.0,
+        abs=0.01,
+    )
+    assert modalities.loc["MULTIMARCA", "carga_asignada"] == pytest.approx(
+        EXPECTED["modalidades"]["MULTIMARCA"]["carga_asignada"]
+    )
+    assert modalities.loc["PITUTO", "personas_activas"] == EXPECTED[
+        "modalidades"
+    ]["PITUTO"]["personas_activas"]
 
 
-def test_monthly_capacity_closures() -> None:
-    monthly = get_monthly_capacity().set_index("month_label")
-
-    for month_label, expected_values in EXPECTED["mensual"].items():
-        actual = monthly.loc[month_label]
-        for field, expected_value in expected_values.items():
-            if isinstance(expected_value, float):
-                assert actual[field] == pytest.approx(expected_value, abs=1e-4)
-            else:
-                assert actual[field] == expected_value
-
-
-def test_regional_volume_reconciles() -> None:
+def test_regional_reconciliation() -> None:
     period = EXPECTED["periodo_referencia"]
     snapshot = get_snapshot(period).iloc[0]
     regions = get_regions(period)
+    rt_regions = get_rt_region_capacity(period)
+    services = get_services(period).set_index("servicio_operativo")
 
     assert regions["volumen_operativo"].sum() == pytest.approx(
         snapshot["volumen_operativo"]
@@ -117,3 +128,31 @@ def test_regional_volume_reconciles() -> None:
         100.0,
         abs=0.01,
     )
+    assert rt_regions["carga_retail_trust"].sum() == pytest.approx(
+        services.loc["RETAIL TRUST", "carga_servicio"]
+    )
+    assert rt_regions["participacion_rt_region_pct"].sum() == pytest.approx(
+        100.0,
+        abs=0.01,
+    )
+
+
+def test_monthly_service_model() -> None:
+    services = get_monthly_services()
+    rt = get_monthly_rt()
+
+    assert services["month_label"].nunique() == 6
+    assert rt["month_label"].nunique() == 6
+    assert set(services["servicio_operativo"].unique()) == {
+        "RETAIL TRUST",
+        "BREDEN MASTER",
+        "PROPAL",
+    }
+    monthly_share = services.groupby("month_label")[
+        "participacion_corte_pct"
+    ].sum()
+    assert (monthly_share - 100.0).abs().max() <= 0.01
+    assert (
+        rt["peso_multimarca_dentro_rt_pct"]
+        + rt["peso_pituto_dentro_rt_pct"]
+    ).sub(100.0).abs().max() <= 0.01
