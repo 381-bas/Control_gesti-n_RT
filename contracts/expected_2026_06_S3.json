@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "periodo_referencia": "2026-06-S3",
   "periodo_anterior": "2026-06-S2",
   "universo": {
@@ -83,5 +83,56 @@
     "locales_cierre": 909,
     "local_cliente_cierre": 3572,
     "personas_cierre": 117
+  },
+  "gerencial_v1": {
+    "concentracion_top2_retail_pct": 82.5897,
+    "concentracion_top2_region_pct": 60.2932,
+    "carga_asignada_total": 7869.0,
+    "peso_multimarca_pct": 78.2437,
+    "peso_pituto_pct": 17.3465
+  },
+  "top_region": {
+    "region": "13 - RM",
+    "volumen_operativo": 3712.0,
+    "participacion_volumen_pct": 47.7305,
+    "locales_activos": 399,
+    "puntos_gestion": 1654,
+    "clientes_activos": 43
+  },
+  "region_rm": {
+    "rutas_estructurales": 55,
+    "distribucion_presencia_rutas_pct": 57.8947,
+    "personas_flexibles": 20,
+    "carga_por_ruta_estructural": 56.8727,
+    "puntos_por_persona": 22.0533
+  },
+  "mayor_carga_por_ruta": {
+    "region": "16 - ÑUBLE",
+    "carga_por_ruta_estructural": 115.0,
+    "rutas_estructurales": 1
+  },
+  "mensual": {
+    "2026-01": {
+      "volumen_cierre": 7988.0,
+      "locales_cierre": 790,
+      "local_cliente_cierre": 3619,
+      "clientes_cierre": 44,
+      "personas_multimarca_cierre": 62,
+      "locales_multimarca_cierre": 519,
+      "puntos_multimarca_cierre": 2825,
+      "personas_pituto_cierre": 4,
+      "carga_pituto_cierre": 1557.0
+    },
+    "2026-06": {
+      "volumen_cierre": 7777.0,
+      "locales_cierre": 909,
+      "local_cliente_cierre": 3572,
+      "clientes_cierre": 45,
+      "personas_multimarca_cierre": 63,
+      "locales_multimarca_cierre": 618,
+      "puntos_multimarca_cierre": 2839,
+      "personas_pituto_cierre": 3,
+      "carga_pituto_cierre": 1365.0
+    }
   }
 }
