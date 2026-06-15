@@ -16,7 +16,7 @@ Construir una fuente única de datos y un dashboard gerencial que permita analiz
 
 ## Fuente canónica
 
-La lógica oficial vive en **SQLite** mediante tablas y vistas SQL. Streamlit será la primera interfaz de visualización y no debe recalcular reglas de negocio.
+La lógica oficial vive en **SQLite** mediante tablas materializadas y vistas SQL. Streamlit será la primera interfaz de visualización y no debe recalcular reglas de negocio.
 
 ```text
 Excel semanales
@@ -25,7 +25,7 @@ Python · ingesta y QA
       ↓
 rr_historico.sqlite
       ↓
-Vistas SQL gerenciales
+Facts + vistas SQL gerenciales
       ↓
 Streamlit
 ```
@@ -61,7 +61,14 @@ Cualquier otro valor         → N/A
 
 Los valores `CIERRE`, `REMODELACIÓN` y `POR INAGURAR` son estados de catastro, no personas.
 
-## Estructura inicial
+### Personas y rutas
+
+```text
+PERSONAS = COUNT(DISTINCT REPONEDOR)
+RUTAS    = COUNT(DISTINCT RUTERO)
+```
+
+## Estructura
 
 ```text
 Control_gesti-n_RT/
@@ -70,6 +77,7 @@ Control_gesti-n_RT/
 ├── requirements.txt
 ├── .env.example
 ├── data/
+├── docs/
 ├── scripts/
 ├── sql/
 ├── contracts/
@@ -77,12 +85,67 @@ Control_gesti-n_RT/
 └── tests/
 ```
 
+## Aplicar el modelo SQL
+
+Crea `.env` desde `.env.example` y ejecuta:
+
+```powershell
+python scripts/aplicar_vistas.py
+```
+
+El proceso:
+
+1. crea un backup consistente de SQLite;
+2. aplica `sql/01_...` a `sql/07_...`;
+3. reconstruye las tablas `fact_rr_*`;
+4. ejecuta `ANALYZE`;
+5. valida objetos, unicidad, QA y cuadre de movimientos.
+
+## Pruebas
+
+```powershell
+pytest -q
+```
+
+Resultado de desarrollo de la Ruta 2:
+
+```text
+13 passed
+0 controles ERROR positivos
+0 deltas sin cuadrar
+0 duplicados en la clave analítica LOCAL/CLIENTE
+```
+
+Fixture gerencial:
+
+```text
+contracts/expected_2026_06_S3.json
+```
+
+Documentación técnica:
+
+```text
+docs/RUTA_2_SQL.md
+```
+
+## Rendimiento
+
+Las consultas principales quedaron materializadas para consumo de Streamlit:
+
+- resumen global y mensual: menos de 0,01 s en la prueba local;
+- rankings de cadenas y clientes: menos de 0,01 s;
+- modalidades: menos de 0,01 s;
+- catastro de 909 locales: alrededor de 0,01 s;
+- movimientos detallados de 3.572 registros: alrededor de 0,13 s.
+
+La evidencia se conserva en `contracts/performance_route2.json`.
+
 ## Seguridad de datos
 
 La base SQLite, archivos Excel y salidas con información operativa no se versionan en Git.
 
 ## Estado
 
-**Fase 1 · Bootstrap del repositorio**
-
-Próximo bloque: creación y validación de las vistas SQL gerenciales antes de construir la interfaz Streamlit.
+- **Ruta 1 · Bootstrap:** completada.
+- **Ruta 2 · Modelo SQL gerencial:** completada y validada.
+- **Próximo bloque:** MVP Streamlit conectado exclusivamente a las vistas publicadas.
