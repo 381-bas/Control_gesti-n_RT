@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "database_rows": 78770,
+  "periods": 23,
+  "measured_on": "local SQLite test copy",
+  "queries": {
+    "resumen_latest": {
+      "rows": 1,
+      "median_seconds": 0.000675,
+      "max_seconds": 0.009532
+    },
+    "resumen_mensual": {
+      "rows": 6,
+      "median_seconds": 0.000628,
+      "max_seconds": 0.004699
+    },
+    "ranking_cadenas": {
+      "rows": 11,
+      "median_seconds": 0.000125,
+      "max_seconds": 0.000613
+    },
+    "ranking_clientes_top20": {
+      "rows": 20,
+      "median_seconds": 0.000173,
+      "max_seconds": 0.00067
+    },
+    "modalidades": {
+      "rows": 4,
+      "median_seconds": 0.000565,
+      "max_seconds": 0.001192
+    },
+    "movimientos_detalle": {
+      "rows": 3572,
+      "median_seconds": 0.12735,
+      "max_seconds": 0.16686
+    },
+    "catastro": {
+      "rows": 909,
+      "median_seconds": 0.008518,
+      "max_seconds": 0.013067
+    },
+    "qa": {
+      "rows": 11,
+      "median_seconds": 0.000067,
+      "max_seconds": 0.001687
+    }
+  },
+  "acceptance": {
+    "main_tables_under_seconds": 1.5
+  }
+}
