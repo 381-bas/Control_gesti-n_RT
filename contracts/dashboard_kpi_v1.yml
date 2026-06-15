@@ -1,0 +1,125 @@
+version: 1
+estado: listo_para_validacion_visual
+objetivo: >
+  Mostrar dónde se concentra la carga operativa actual y qué evidencia
+  respalda la revisión de capacidad de rutas y dotación.
+
+regla_temporal:
+  fotografia_actual: ultima_semana_disponible
+  tarjetas_con_delta_semanal: false
+  tendencia_principal: cierre_mensual
+  referencia_secundaria: promedio_semanal_del_mes
+
+cabecera:
+  - id: carga_operativa_semanal
+    label: Carga operativa semanal
+    fuente: v_rr_resumen_global.volumen_operativo
+    definicion: Suma de MAX(VECES POR SEMANA) por periodo, cadena, COD KPI ONE y cliente.
+  - id: locales_cubiertos
+    label: Locales cubiertos
+    fuente: v_rr_resumen_global.locales_activos
+  - id: puntos_gestion
+    label: Puntos de gestión
+    fuente: v_rr_resumen_global.local_cliente
+    definicion: Combinaciones CADENA + COD KPI ONE + CLIENTE.
+  - id: clientes_activos
+    label: Clientes activos
+    fuente: v_rr_resumen_global.clientes_activos
+  - id: personas_multimarca
+    label: Personas MULTIMARCA
+    fuente: v_rr_resumen_global.personas_multimarca
+  - id: personas_pituto
+    label: Personas PITUTO
+    fuente: v_rr_resumen_global.personas_pituto
+
+concentracion_retail:
+  fuente: v_rr_cadena_semanal
+  metrica_peso: volumen_operativo
+  denominador: volumen_operativo_total
+  visual: barra_horizontal_descendente
+  etiqueta: cantidad_y_porcentaje
+  detalle:
+    - locales_activos
+    - local_cliente
+    - clientes_activos
+
+concentracion_modalidad:
+  fuente: v_rr_modalidad_semanal
+  metrica_peso: carga_asignada
+  denominador: carga_asignada_total
+  visual: donut_y_tabla_compacta
+  categorias:
+    - MULTIMARCA
+    - PITUTO
+    - BREDEN
+    - PROPAL
+  detalle:
+    - personas_activas
+    - rutas_activas
+    - locales_asignados
+    - local_cliente_asignados
+    - carga_por_persona
+  advertencia: >
+    La carga asignada puede superar el volumen oficial cuando una gestión
+    está compartida entre modalidades.
+
+concentracion_region:
+  fuente: v_rr_region_semanal
+  metrica_peso: volumen_operativo
+  denominador: volumen_operativo_total
+  visual: barra_horizontal_descendente
+  detalle:
+    - locales_activos
+    - puntos_gestion
+    - clientes_activos
+
+capacidad_region:
+  fuente: v_rr_region_capacidad_semanal
+  rutas_estructurales:
+    definicion: COUNT DISTINCT RUTERO para MULTIMARCA y BREDEN dentro de cada región.
+    visual: barra_carga_por_ruta
+  capacidad_flexible:
+    definicion: COUNT DISTINCT REPONEDOR para PITUTO y PROPAL dentro de cada región.
+  indicadores:
+    - carga_por_ruta_estructural
+    - carga_flexible_por_persona
+    - puntos_por_persona
+    - distribucion_presencia_rutas_pct
+  nota: >
+    La distribución de rutas utiliza presencias REGION + RUTERO. Una ruta
+    presente en más de una región participa en cada región.
+
+comportamiento_mensual:
+  fuente_global: v_rr_capacidad_mensual
+  fuente_modalidad: v_rr_modalidad_mensual
+  visuales:
+    - cierre_y_promedio_carga
+    - cierre_y_promedio_puntos
+    - cierre_y_promedio_locales
+    - cierre_y_promedio_clientes
+    - carga_y_personas_multimarca
+    - carga_y_personas_pituto
+
+lectura_operacional:
+  tipo: hechos_automaticos
+  recomendaciones_automaticas: false
+  hechos:
+    - concentracion_top_2_retail
+    - concentracion_top_2_region
+    - cambio_mensual_carga_locales_y_puntos
+    - rango_dotacion_multimarca
+    - rango_carga_pituto
+    - region_con_mayor_carga_por_ruta
+
+fuera_de_alcance_v1:
+  - permanencia_y_estatus_del_cliente
+  - locales_mantenidos_por_cliente_y_cadena
+  - clasificacion_estable_transitorio_recurrente
+  - migracion_historica_de_modalidad
+  - recomendacion_automatica_de_nueva_ruta
+
+regla_frontend:
+  recalcular_metricas: false
+  fuente_unica: vistas_sql
+  pagina_principal: unica
+  detalle: expanders_exportables
