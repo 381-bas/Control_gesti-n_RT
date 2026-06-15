@@ -4,15 +4,13 @@ Proyecto para consolidar y analizar históricamente la operación **RUTA RUTERO*
 
 ## Objetivo
 
-Construir una fuente única de datos y un dashboard gerencial que permita analizar:
+Construir una fuente única de datos y una página gerencial que permita revisar:
 
-- crecimiento semanal y mensual;
-- volumen operativo por cadena, cliente y local;
-- frecuencia consolidada por LOCAL/CLIENTE;
-- dotación y carga por modalidad;
-- altas, bajas y cambios de frecuencia;
-- catastro de estados operativos;
-- calidad y trazabilidad de las cargas.
+- carga operativa actual;
+- concentración por RETAIL, modalidad y región;
+- capacidad estructural y flexible;
+- comportamiento mensual;
+- detalle operativo como respaldo.
 
 ## Fuente canónica
 
@@ -40,7 +38,7 @@ Streamlit local
 
 ## Reglas confirmadas
 
-### Frecuencia operativa
+### Carga operativa
 
 ```text
 CADENA + COD KPI ONE + CLIENTE
@@ -59,29 +57,14 @@ Cualquier otro valor         → N/A
 
 Los valores `CIERRE`, `REMODELACIÓN` y `POR INAGURAR` son estados de catastro, no personas.
 
-### Personas y rutas
+### Personas y capacidad regional
 
 ```text
 PERSONAS = COUNT(DISTINCT REPONEDOR)
-RUTAS    = COUNT(DISTINCT RUTERO)
-```
-
-## Estructura
-
-```text
-Control_gesti-n_RT/
-├── README.md
-├── .gitignore
-├── requirements.txt
-├── .env.example
-├── .streamlit/
-├── data/
-├── docs/
-├── scripts/
-├── sql/
-├── contracts/
-├── streamlit_app/
-└── tests/
+RUTAS ESTRUCTURALES = COUNT(DISTINCT RUTERO)
+                       para MULTIMARCA y BREDEN
+CAPACIDAD FLEXIBLE = COUNT(DISTINCT REPONEDOR)
+                     para PITUTO y PROPAL
 ```
 
 ## Aplicar el modelo SQL
@@ -95,10 +78,10 @@ python scripts/aplicar_vistas.py
 El proceso:
 
 1. crea un backup consistente de SQLite;
-2. aplica `sql/01_...` a `sql/07_...`;
+2. aplica los archivos SQL versionados;
 3. reconstruye las tablas `fact_rr_*`;
 4. ejecuta `ANALYZE`;
-5. valida objetos, unicidad, QA y cuadre de movimientos.
+5. valida objetos, unicidad, participaciones y cuadres.
 
 ## Ejecutar el dashboard local
 
@@ -113,13 +96,18 @@ La aplicación se abre normalmente en:
 http://localhost:8501
 ```
 
-Vistas disponibles:
+## Página gerencial V1
 
-1. Resumen gerencial.
-2. Cadenas y clientes.
-3. Modalidades y dotación.
-4. Crecimiento y movimientos.
-5. Catastro y calidad.
+La lectura principal queda en una sola página:
+
+1. Situación operativa actual.
+2. Peso por RETAIL y modalidad.
+3. Peso y capacidad por región.
+4. Tendencias mensuales.
+5. Lectura operacional automática.
+6. Detalle desplegable y exportable.
+
+No se muestran comparaciones automáticas contra la semana anterior. La tendencia principal utiliza cierre mensual y promedio semanal del mes.
 
 ## Pruebas
 
@@ -127,41 +115,25 @@ Vistas disponibles:
 python -m pytest -q
 ```
 
-Resultado de la Ruta 2:
-
-```text
-13 passed
-0 controles ERROR positivos
-0 deltas sin cuadrar
-0 duplicados en la clave analítica LOCAL/CLIENTE
-```
-
-La Ruta 3 agrega pruebas de las consultas utilizadas por Streamlit.
-
 Fixture gerencial:
 
 ```text
 contracts/expected_2026_06_S3.json
 ```
 
-Documentación técnica:
+Contrato de KPI:
+
+```text
+contracts/dashboard_kpi_v1.yml
+```
+
+Documentación:
 
 ```text
 docs/RUTA_2_SQL.md
+docs/PLAN_LIMPIEZA_KPI_GERENCIAL_V1.md
 streamlit_app/README.md
 ```
-
-## Rendimiento
-
-Las consultas principales quedaron materializadas para consumo de Streamlit:
-
-- resumen global y mensual: menos de 0,01 s en la prueba local;
-- rankings de cadenas y clientes: menos de 0,01 s;
-- modalidades: menos de 0,01 s;
-- catastro de 909 locales: alrededor de 0,01 s;
-- movimientos detallados de 3.572 registros: alrededor de 0,13 s.
-
-La evidencia se conserva en `contracts/performance_route2.json`.
 
 ## Seguridad de datos
 
@@ -170,5 +142,6 @@ La base SQLite, archivos Excel y salidas con información operativa no se versio
 ## Estado
 
 - **Ruta 1 · Bootstrap:** completada.
-- **Ruta 2 · Modelo SQL gerencial:** completada y validada.
-- **Ruta 3 · MVP Streamlit local:** implementada; pendiente de validación visual del usuario.
+- **Ruta 2 · Modelo SQL:** completada y validada.
+- **Ruta 3 · Página gerencial V1:** implementada; pendiente de validación visual y de negocio.
+- **Siguiente etapa:** congelar el contrato aprobado y entregar el diseño a Codex para la versión HTML.
