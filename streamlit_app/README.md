@@ -1,81 +1,45 @@
-# Dashboard Streamlit · Ruta 3
+# Dashboard Streamlit · Página gerencial V1
 
-Primera interfaz local del dashboard gerencial de Control de Gestión RT.
-
-## Ejecución
+## Preparación
 
 Desde la raíz del repositorio:
 
 ```powershell
-& C:\Users\basti\AppData\Local\Python\pythoncore-3.14-64\python.exe `
-  -m streamlit run streamlit_app\app.py
+git pull origin main
+python scripts/aplicar_vistas.py
 ```
 
-La aplicación abrirá normalmente:
-
-```text
-http://localhost:8501
-```
-
-## Fuente
-
-La aplicación lee `RR_DB_PATH` desde `.env` y abre SQLite en modo lectura.
-Antes de ejecutarla, la capa de la Ruta 2 debe estar aplicada:
+## Ejecución
 
 ```powershell
-python scripts\aplicar_vistas.py
+python -m streamlit run streamlit_app/app.py
 ```
 
-## Vistas funcionales
+Dirección local habitual: `http://localhost:8501`.
 
-1. **Resumen gerencial**
-   - KPI globales y ratios;
-   - evolución semanal;
-   - ranking de cadenas y clientes;
-   - estructura por modalidad;
-   - tabla ejecutiva exportable.
+## Estructura
 
-2. **Cadenas y clientes**
-   - Pareto de cadenas;
-   - variación contra período seleccionable;
-   - drilldown de clientes por cadena;
-   - ranking y exportación.
+1. Situación operativa actual.
+2. Concentración por RETAIL y modalidad.
+3. Distribución territorial y capacidad regional.
+4. Comportamiento mensual.
+5. Lectura operacional basada en datos.
+6. Respaldo desplegable y exportable.
 
-3. **Modalidades y dotación**
-   - personas y rutas;
-   - carga asignada;
-   - carga por persona;
-   - evolución semanal;
-   - ratios estructurales.
+## Reglas
 
-4. **Crecimiento y movimientos**
-   - nuevos y retirados;
-   - cambios de frecuencia;
-   - waterfall de volumen;
-   - comparación entre dos períodos cualesquiera;
-   - detalle exportable.
+- La fotografía actual corresponde a la última semana disponible.
+- No se muestran deltas automáticos contra la semana anterior.
+- Las tendencias utilizan cierre mensual y promedio semanal.
+- MULTIMARCA/BREDEN representan rutas estructurales.
+- PITUTO/PROPAL representan capacidad flexible por persona.
+- Streamlit consume vistas SQLite y no recalcula métricas.
+- La base se abre en modo lectura.
 
-5. **Catastro y calidad**
-   - filtros de cadena, región y situación;
-   - estados operativos;
-   - detalle de locales;
-   - QA por período.
+## Validación
 
-## Principios
-
-- SQLite se abre con `mode=ro` y `PRAGMA query_only=ON`.
-- La aplicación no modifica datos.
-- El volumen oficial proviene de las facts de la Ruta 2.
-- Los comparativos y movimientos se resuelven mediante SQL.
-- Las consultas se cachean durante cinco minutos y se invalidan cuando cambia la base.
-- Cada tabla visible puede descargarse en CSV.
-
-## Archivo principal
-
-Para una eventual publicación en Streamlit Community Cloud:
-
-```text
-streamlit_app/app.py
+```powershell
+python -m pytest -q
 ```
 
-La publicación cloud requiere reemplazar la ruta SQLite local por una fuente accesible desde internet.
+Contrato funcional: `contracts/dashboard_kpi_v1.yml`.
