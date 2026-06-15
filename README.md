@@ -6,9 +6,9 @@ Proyecto para consolidar y analizar históricamente la operación **RUTA RUTERO*
 
 Construir una fuente única de datos y una página gerencial que permita revisar:
 
-- carga operativa actual;
-- concentración por RETAIL, modalidad y región;
-- capacidad estructural y flexible;
+- carga operativa total de la empresa;
+- concentración por RETAIL, servicio y región;
+- capacidad estructural y flexible de Retail Trust;
 - comportamiento mensual;
 - detalle operativo como respaldo.
 
@@ -57,14 +57,21 @@ Cualquier otro valor         → N/A
 
 Los valores `CIERRE`, `REMODELACIÓN` y `POR INAGURAR` son estados de catastro, no personas.
 
-### Personas y capacidad regional
+### Servicios operativos
 
 ```text
-PERSONAS = COUNT(DISTINCT REPONEDOR)
-RUTAS ESTRUCTURALES = COUNT(DISTINCT RUTERO)
-                       para MULTIMARCA y BREDEN
-CAPACIDAD FLEXIBLE = COUNT(DISTINCT REPONEDOR)
-                     para PITUTO y PROPAL
+RETAIL TRUST  = MULTIMARCA + PITUTO
+BREDEN MASTER = BREDEN
+PROPAL        = PROPAL
+```
+
+Retail Trust corresponde al servicio de reposición de mercaderistas. MULTIMARCA representa su estructura permanente y PITUTO su capacidad flexible. Breden Master y Propal son servicios independientes y no se incorporan a la presión de rutas de Retail Trust.
+
+### Capacidad Retail Trust
+
+```text
+RUTAS MULTIMARCA = COUNT(DISTINCT RUTERO)
+PERSONAS PITUTO   = COUNT(DISTINCT REPONEDOR)
 ```
 
 ## Aplicar el modelo SQL
@@ -75,13 +82,7 @@ Crea `.env` desde `.env.example` y ejecuta:
 python scripts/aplicar_vistas.py
 ```
 
-El proceso:
-
-1. crea un backup consistente de SQLite;
-2. aplica los archivos SQL versionados;
-3. reconstruye las tablas `fact_rr_*`;
-4. ejecuta `ANALYZE`;
-5. valida objetos, unicidad, participaciones y cuadres.
+El proceso aplica automáticamente todos los archivos SQL versionados, incluyendo `10_modelo_servicios_v2.sql` y `11_modelo_servicios_patch.sql`.
 
 ## Ejecutar el dashboard local
 
@@ -90,24 +91,25 @@ El proceso:
   -m streamlit run streamlit_app\app.py
 ```
 
-La aplicación se abre normalmente en:
+Dirección local habitual:
 
 ```text
 http://localhost:8501
 ```
 
-## Página gerencial V1
+## Página gerencial V2
 
 La lectura principal queda en una sola página:
 
-1. Situación operativa actual.
-2. Peso por RETAIL y modalidad.
-3. Peso y capacidad por región.
-4. Tendencias mensuales.
-5. Lectura operacional automática.
-6. Detalle desplegable y exportable.
+1. Situación operativa total empresa.
+2. Peso por RETAIL y servicio.
+3. Composición MULTIMARCA/PITUTO dentro de Retail Trust.
+4. Capacidad regional de Retail Trust.
+5. Tendencias mensuales globales y por servicio.
+6. Lectura operacional automática.
+7. Detalle desplegable y exportable.
 
-No se muestran comparaciones automáticas contra la semana anterior. La tendencia principal utiliza cierre mensual y promedio semanal del mes.
+La fotografía corresponde a la última semana disponible. Los gráficos mensuales utilizan el último corte disponible de cada mes y no comparaciones automáticas contra la semana anterior.
 
 ## Pruebas
 
@@ -115,24 +117,11 @@ No se muestran comparaciones automáticas contra la semana anterior. La tendenci
 python -m pytest -q
 ```
 
-Fixture gerencial:
+Contratos:
 
 ```text
 contracts/expected_2026_06_S3.json
-```
-
-Contrato de KPI:
-
-```text
-contracts/dashboard_kpi_v1.yml
-```
-
-Documentación:
-
-```text
-docs/RUTA_2_SQL.md
-docs/PLAN_LIMPIEZA_KPI_GERENCIAL_V1.md
-streamlit_app/README.md
+contracts/dashboard_kpi_v2.yml
 ```
 
 ## Seguridad de datos
@@ -143,5 +132,5 @@ La base SQLite, archivos Excel y salidas con información operativa no se versio
 
 - **Ruta 1 · Bootstrap:** completada.
 - **Ruta 2 · Modelo SQL:** completada y validada.
-- **Ruta 3 · Página gerencial V1:** implementada; pendiente de validación visual y de negocio.
+- **Ruta 3 · Página gerencial V2:** implementada; pendiente de validación visual y de negocio.
 - **Siguiente etapa:** congelar el contrato aprobado y entregar el diseño a Codex para la versión HTML.
