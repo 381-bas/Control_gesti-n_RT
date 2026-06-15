@@ -1,0 +1,90 @@
+version: 1
+estado: borrador_validado
+
+metricas:
+  volumen_operativo:
+    label: Volumen operativo
+    definicion: Suma de la frecuencia contable consolidada por periodo, cadena, COD KPI ONE y cliente.
+    fuente_base: v_rr_local_cliente_max
+    campo: veces_por_semana_contable
+    agregacion: sum
+    grano: periodo_cadena_local_cliente
+
+  locales_activos:
+    label: Locales activos
+    definicion: Cantidad distinta de COD KPI ONE con presencia en el periodo.
+    fuente_base: v_rr_local_cliente_max
+    campo: cod_kpi_one
+    agregacion: count_distinct
+    grano: periodo
+
+  local_cliente:
+    label: LOCAL/CLIENTE
+    definicion: Cantidad de combinaciones distintas entre cadena, COD KPI ONE y cliente.
+    fuente_base: v_rr_local_cliente_max
+    agregacion: count_rows
+    grano: periodo
+
+  clientes_activos:
+    label: Clientes activos
+    definicion: Cantidad distinta de clientes con presencia en el periodo.
+    fuente_base: v_rr_local_cliente_max
+    campo: cliente
+    agregacion: count_distinct
+    grano: periodo
+
+  personas_activas:
+    label: Personas activas
+    definicion: Cantidad distinta de REPONEDOR, excluyendo estados de catastro.
+    fuente_base: rr_snapshot_raw
+    campo: reponedor
+    agregacion: count_distinct
+    exclusiones_rutero:
+      - CIERRE
+      - REMODELACIÓN
+      - POR INAGURAR
+    grano: periodo
+
+  rutas_activas:
+    label: Rutas activas
+    definicion: Cantidad distinta de RUTERO, excluyendo estados de catastro.
+    fuente_base: v_rr_rutero_modalidad_semana
+    campo: rutero
+    agregacion: count_distinct
+    exclusiones:
+      - CIERRE
+      - REMODELACIÓN
+      - POR INAGURAR
+    grano: periodo
+
+  intensidad_servicio:
+    label: Intensidad de servicio
+    formula: volumen_operativo / local_cliente
+    formato: decimal_2
+
+  densidad_cartera:
+    label: Densidad de cartera
+    formula: local_cliente / locales_activos
+    formato: decimal_2
+
+  volumen_por_local:
+    label: Volumen por local
+    formula: volumen_operativo / locales_activos
+    formato: decimal_2
+
+  volumen_por_persona:
+    label: Volumen por persona
+    formula: volumen_operativo / personas_activas
+    formato: decimal_2
+
+reglas_temporales:
+  comparador_predeterminado: semana_anterior
+  mensual_cierre: ultima_semana_disponible_del_mes
+  mensual_promedio: promedio_de_fotografias_semanales
+
+reglas_modalidad:
+  PITUTO: rutero_igual_PITUTO
+  PROPAL: rutero_igual_PROPAL
+  BREDEN: primeros_dos_caracteres_BR
+  MULTIMARCA: caracteres_dos_y_tres_MU
+  N_A: cualquier_otro_valor
