@@ -1,0 +1,46 @@
+# Bases y archivos operativos
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+
+# Datos locales
+data/raw/
+data/input/
+data/output/
+output/
+exports/
+
+# Configuración y secretos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
