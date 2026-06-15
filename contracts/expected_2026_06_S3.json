@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "periodo_referencia": "2026-06-S3",
+  "periodo_anterior": "2026-06-S2",
+  "universo": {
+    "archivos_validos": 23,
+    "filas_raw": 78770,
+    "periodos": 23,
+    "primer_periodo": "2026-01-S1",
+    "ultimo_periodo": "2026-06-S3",
+    "local_cliente_historico": 76635
+  },
+  "resumen_global": {
+    "volumen_operativo": 7777.0,
+    "locales_activos": 909,
+    "local_cliente": 3572,
+    "clientes_activos": 45,
+    "personas_activas": 117,
+    "rutas_activas": 96,
+    "intensidad_servicio": 2.1772,
+    "densidad_cartera": 3.9296,
+    "volumen_por_persona": 66.4701,
+    "delta_volumen_operativo": 64.0,
+    "delta_locales_activos": 64,
+    "delta_local_cliente": 64
+  },
+  "top_cadena": {
+    "cadena": "CENCOSUD",
+    "volumen_operativo": 3945.0,
+    "locales_activos": 307,
+    "local_cliente": 1781,
+    "participacion_volumen_pct": 50.7265
+  },
+  "top_cliente": {
+    "cliente": "CASO Y CIA",
+    "volumen_operativo": 922.0,
+    "locales_activos": 445,
+    "cadenas_activas": 6,
+    "participacion_volumen_pct": 11.8555
+  },
+  "modalidades": {
+    "MULTIMARCA": {
+      "personas_activas": 63,
+      "rutas_activas": 63,
+      "locales_asignados": 618,
+      "local_cliente_asignados": 2839,
+      "carga_asignada": 6157.0
+    },
+    "PITUTO": {
+      "personas_activas": 3,
+      "rutas_activas": 1,
+      "locales_asignados": 321,
+      "local_cliente_asignados": 659,
+      "carga_asignada": 1365.0
+    },
+    "BREDEN": {
+      "personas_activas": 31,
+      "rutas_activas": 31,
+      "locales_asignados": 80,
+      "local_cliente_asignados": 84,
+      "carga_asignada": 227.0
+    },
+    "PROPAL": {
+      "personas_activas": 20,
+      "rutas_activas": 1,
+      "locales_asignados": 20,
+      "local_cliente_asignados": 20,
+      "carga_asignada": 120.0
+    }
+  },
+  "crecimiento": {
+    "nuevos_local_cliente": 64,
+    "retirados_local_cliente": 0,
+    "aumentos_frecuencia": 0,
+    "disminuciones_frecuencia": 0,
+    "efecto_neto_movimientos": 64.0,
+    "qa_delta_movimientos_cuadra": 1
+  },
+  "cierre_mensual": {
+    "month_label": "2026-06",
+    "cierre_period_label": "2026-06-S3",
+    "volumen_cierre": 7777.0,
+    "locales_cierre": 909,
+    "local_cliente_cierre": 3572,
+    "personas_cierre": 117
+  }
+}
