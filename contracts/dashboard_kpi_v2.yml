@@ -1,0 +1,168 @@
+version: 2
+estado: listo_para_validacion_visual
+objetivo: >
+  Mostrar la carga total de la empresa, separar los servicios operativos y
+  revisar la capacidad regional del servicio Retail Trust.
+
+modelo_servicios:
+  RETAIL_TRUST:
+    modalidades:
+      - MULTIMARCA
+      - PITUTO
+    descripcion: Servicio de reposición de mercaderistas de Retail Trust.
+    capacidad_estructural: COUNT DISTINCT RUTERO de MULTIMARCA
+    capacidad_flexible: COUNT DISTINCT REPONEDOR de PITUTO
+  BREDEN_MASTER:
+    modalidades:
+      - BREDEN
+    descripcion: Servicio independiente con rutas propias.
+  PROPAL:
+    modalidades:
+      - PROPAL
+    descripcion: Servicio independiente, separado de la capacidad Retail Trust.
+
+reglas_de_total:
+  total_empresa:
+    fuente: v_rr_resumen_global
+    incluye:
+      - RETAIL TRUST
+      - BREDEN MASTER
+      - PROPAL
+    metrica: volumen_operativo
+    definicion: MAX(VECES POR SEMANA) por periodo, cadena, COD KPI ONE y cliente.
+  peso_por_servicio:
+    fuente: v_rr_servicio_semanal
+    metrica: carga_servicio
+    definicion: >
+      MAX de carga asignada por LOCAL/CLIENTE dentro de cada servicio. Evita
+      duplicar una gestión compartida entre MULTIMARCA y PITUTO.
+  composicion_retail_trust:
+    fuente: v_rr_modalidad_semanal
+    metrica: carga_asignada
+    categorias:
+      - MULTIMARCA
+      - PITUTO
+    nota: La suma por modalidad puede superar la carga contable del servicio.
+
+regla_temporal:
+  fotografia_actual: ultima_semana_disponible
+  etiqueta_temporal: corte_disponible
+  tarjetas_con_delta_semanal: false
+  tendencia_principal: ultimo_corte_disponible_del_mes
+  referencia_secundaria: promedio_semanal_del_mes
+
+cabecera:
+  - id: carga_operativa_oficial
+    label: Carga operativa oficial
+    fuente: v_rr_resumen_global.volumen_operativo
+  - id: locales_cubiertos
+    label: Locales cubiertos
+    fuente: v_rr_resumen_global.locales_activos
+  - id: puntos_gestion
+    label: Puntos de gestión
+    fuente: v_rr_resumen_global.local_cliente
+  - id: clientes_activos
+    label: Clientes activos
+    fuente: v_rr_resumen_global.clientes_activos
+  - id: dotacion_total
+    label: Dotación total
+    fuente: v_rr_resumen_global.personas_activas
+  - id: dotacion_retail_trust
+    label: Dotación Retail Trust
+    fuente: v_rr_servicio_semanal.personas_activas
+
+concentracion_retail:
+  fuente: v_rr_cadena_semanal
+  metrica_peso: volumen_operativo
+  visual: barra_horizontal_descendente
+
+concentracion_servicio:
+  fuente: v_rr_servicio_semanal
+  metrica_peso: carga_servicio
+  visual: barra_horizontal_descendente
+  categorias:
+    - RETAIL TRUST
+    - BREDEN MASTER
+    - PROPAL
+
+retail_trust:
+  fuente_modalidad: v_rr_modalidad_semanal
+  modalidades:
+    MULTIMARCA:
+      rol: estructura_permanente
+      unidad_capacidad: rutas
+    PITUTO:
+      rol: capacidad_flexible
+      unidad_capacidad: personas
+  indicadores:
+    - carga_asignada
+    - personas_activas
+    - locales_asignados
+    - local_cliente_asignados
+    - carga_por_persona
+
+capacidad_region_retail_trust:
+  fuente: v_rr_region_retail_trust_semanal
+  indicadores:
+    - carga_retail_trust
+    - participacion_rt_region_pct
+    - rutas_multimarca
+    - personas_multimarca
+    - personas_pituto
+    - carga_por_ruta_multimarca
+    - carga_pituto_por_persona
+    - puntos_rt_por_persona
+  regla_visual: >
+    El ranking principal de carga por ruta exige al menos dos rutas
+    MULTIMARCA por región para reducir distorsión por base mínima.
+  exclusiones:
+    - BREDEN MASTER
+    - PROPAL
+
+servicios_independientes:
+  BREDEN_MASTER:
+    indicadores:
+      - carga_servicio
+      - personas_activas
+      - rutas_breden
+      - locales_activos
+      - puntos_gestion
+  PROPAL:
+    indicadores:
+      - carga_servicio
+      - personas_activas
+      - locales_activos
+      - puntos_gestion
+
+comportamiento_mensual:
+  fuente_global: v_rr_capacidad_mensual
+  fuente_servicios: v_rr_servicio_mensual
+  fuente_retail_trust: v_rr_retail_trust_mensual
+  visuales:
+    - carga_total_ultimo_corte_y_promedio
+    - carga_contable_por_servicio
+    - carga_multimarca_y_pituto
+    - dotacion_multimarca_y_pituto
+
+lectura_operacional:
+  tipo: hechos_automaticos
+  recomendaciones_automaticas: false
+  hechos:
+    - concentracion_por_retail
+    - expansion_locales_puntos_y_carga
+    - dotacion_retail_trust
+    - servicios_independientes
+    - concentracion_regional
+    - region_con_mayor_carga_por_ruta_multimarca_con_base_minima
+
+fuera_de_alcance_v2:
+  - permanencia_y_estatus_del_cliente
+  - recomendacion_automatica_de_nueva_ruta
+  - umbrales_de_sobrecarga
+  - productividad_por_horas_trabajadas
+
+regla_frontend:
+  recalcular_metricas: false
+  fuente_unica: vistas_sql
+  pagina_principal: unica
+  detalle: expanders_exportables
