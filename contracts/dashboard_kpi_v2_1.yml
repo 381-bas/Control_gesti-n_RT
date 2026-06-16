@@ -1,0 +1,102 @@
+version: 2.1
+estado: listo_para_validacion_local
+objetivo: >
+  Separar la capacidad estructural MULTIMARCA de las gestiones puntuales
+  PITUTO y mantener el total empresa independiente.
+
+pituto:
+  es_ruta: false
+  es_dotacion_en_esta_base: false
+  base_dotacion_real: externa_no_integrada
+  unidad_local:
+    clave: CADENA + COD KPI ONE
+    metrica: pituto_locales
+  unidad_gestion:
+    clave: CADENA + COD KPI ONE + CLIENTE
+    metrica: pituto_gestiones
+  metricas_validas:
+    - pituto_locales
+    - pituto_gestiones
+    - pituto_clientes
+    - pituto_cadenas
+    - pituto_regiones
+    - pituto_carga
+    - gestiones_por_local
+    - carga_por_gestion
+  metricas_prohibidas:
+    - rutas_pituto
+    - personas_pituto
+    - carga_pituto_por_persona
+
+multimarca:
+  es_ruta: true
+  unidad_capacidad: RUTERO
+  metricas:
+    - rutas_multimarca
+    - personas_multimarca
+    - multimarca_locales
+    - multimarca_gestiones
+    - carga_multimarca
+    - carga_por_ruta_multimarca
+    - locales_por_ruta_multimarca
+    - gestiones_por_ruta_multimarca
+
+pagina:
+  cabecera:
+    - carga_operativa_oficial
+    - locales_cubiertos
+    - puntos_gestion
+    - clientes_activos
+    - rutas_multimarca
+    - pituto_gestiones
+  segundo_nivel:
+    - personas_multimarca
+    - locales_multimarca
+    - puntos_multimarca
+    - pituto_locales
+    - pituto_clientes
+    - peso_pituto_en_gestiones_rt_pct
+  bloques:
+    - concentracion_retail_y_servicio
+    - estructura_multimarca
+    - pituto_por_cliente
+    - pituto_por_region
+    - capacidad_multimarca_por_region
+    - tendencias_mensuales
+    - lectura_operacional
+    - respaldo_exportable
+
+vistas:
+  - v_rr_pituto_gestion_semanal
+  - v_rr_pituto_resumen_semanal
+  - v_rr_pituto_cliente_semanal
+  - v_rr_pituto_region_semanal
+  - v_rr_pituto_cliente_region_semanal
+  - v_rr_pituto_mensual
+  - v_rr_region_retail_trust_v2_1
+  - v_rr_retail_trust_operacion_semanal_v2_1
+  - v_rr_retail_trust_operacion_mensual_v2_1
+  - v_rr_gerencial_v2_1_actual
+
+validaciones:
+  - suma_gestiones_cliente_igual_resumen_pituto
+  - suma_gestiones_region_igual_resumen_pituto
+  - suma_carga_cliente_igual_resumen_pituto
+  - suma_carga_region_igual_resumen_pituto
+  - participacion_cliente_suma_100
+  - participacion_region_suma_100
+  - mensual_contiene_todos_los_meses_disponibles
+  - frontend_no_muestra_personas_pituto
+
+integracion_futura:
+  base_pituto_externa:
+    campos_esperados:
+      - persona_real
+      - local
+      - cliente
+      - fecha_inicio
+      - fecha_fin
+      - costo
+    condicion: >
+      No publicar dotacion ni costo PITUTO hasta definir una clave de cruce
+      confiable con RUTA RUTERO.
