@@ -28,24 +28,38 @@ No reutilices como conclusión final la frase previa “sin requerir personal ad
 - No atribuyas causalidad sin evidencia de cruce.
 - Toda cifra debe indicar período, universo y denominador.
 
+## Corrección obligatoria del informe OXXO/OLIMPIA
+
+El informe anterior utilizó `PITUTO` dentro de rankings y conteos de rutas. Debe corregirse:
+
+- `PITUTO` no se contabiliza como ruta.
+- OXXO registra 17 rutas MULTIMARCA afectadas más 3 locales gestionados mediante PITUTO.
+- En S3, OXXO tiene presencia en 22 rutas MULTIMARCA más la categoría PITUTO, no 23 rutas estructurales.
+- De las altas OXXO, 61 locales corresponden a MULTIMARCA y 3 a PITUTO.
+- Diez rutas MULTIMARCA reciben OXXO por primera vez con 29 locales; siete rutas MULTIMARCA preexistentes suman 32 locales; PITUTO agrega 3 locales.
+- OLIMPIA registra 18 rutas MULTIMARCA con 19 locales, más 2 locales PITUTO.
+- La presión coincidente corresponde a 7 rutas MULTIMARCA con 20 locales y 36 unidades de carga directa, más una categoría PITUTO con 5 locales y 9 unidades de carga.
+
+No presentes `PITUTO` como ruta en tablas, gráficos, subtítulos ni conclusiones.
+
 ## Evidencia ya validada
 
 CASO Y CIA/OXXO:
 
 - Pasa de 30 a 94 locales en 2026-06-S3.
 - Incorpora 64 locales nuevos.
-- Afecta 18 rutas.
+- Afecta 17 rutas MULTIMARCA y 3 locales PITUTO.
 - EMU-6, DMU-8, HMU-3 y HMU-4 absorben 37 altas.
 - EMU-6 incorpora 14 locales.
-- Once rutas reciben OXXO por primera vez y siete amplían cobertura.
+- Diez rutas MULTIMARCA reciben OXXO por primera vez y siete amplían cobertura.
 - El 90,6% de las altas corresponde a Región Metropolitana.
 
 OLIMPIA/JUMBO RM:
 
 - Ingresa en 2026-06-S2.
 - Incorpora 21 locales con frecuencia 3.
-- Se distribuye en 19 rutas.
-- Ocho rutas coinciden con impacto OXXO.
+- Se distribuye en 18 rutas MULTIMARCA; 2 locales quedan bajo gestión PITUTO.
+- Siete rutas MULTIMARCA coinciden con impacto OXXO; existe además una coincidencia en la categoría PITUTO.
 - Las cuatro rutas OXXO más afectadas no coinciden con OLIMPIA.
 
 ## Análisis requerido
@@ -93,7 +107,7 @@ Mostrar locales y LOCAL/CLIENTE por cliente y región. No mostrar rutas PITUTO n
 
 ### 6. Incorporaciones recientes
 
-Separar OXXO y OLIMPIA. Mostrar cronología, rutas, regiones y carga incremental.
+Separar OXXO y OLIMPIA. Mostrar cronología, rutas MULTIMARCA, gestión PITUTO, regiones y carga incremental.
 
 ### 7. Costos
 
