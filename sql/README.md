@@ -13,28 +13,32 @@ La lógica canónica del dashboard se implementa en tablas materializadas y vist
 7. `07_dashboard_qa.sql`
 8. `08_kpi_gerencial_v1.sql`
 9. `09_kpi_gerencial_patch.sql`
+10. `10_modelo_servicios_v2.sql`
+11. `11_modelo_servicios_patch.sql`
+12. `12_pituto_gestion_v2_1.sql`
 
-## Capa gerencial V1
+## Modelo V2.1
 
-Los archivos 08 y 09 publican:
+El archivo 12 corrige PITUTO como gestión puntual y no como ruta o dotación.
 
-- `v_rr_region_semanal`
-- `v_rr_region_modalidad_semanal`
-- `v_rr_region_capacidad_semanal`
-- `v_rr_retail_mensual`
-- `v_rr_region_mensual`
-- `v_rr_modalidad_mensual`
-- `v_rr_capacidad_mensual`
-- `v_rr_gerencial_actual`
+Publica:
+
+- `v_rr_pituto_gestion_semanal`
+- `v_rr_pituto_resumen_semanal`
+- `v_rr_pituto_cliente_semanal`
+- `v_rr_pituto_region_semanal`
+- `v_rr_pituto_cliente_region_semanal`
+- `v_rr_pituto_mensual`
+- `v_rr_region_retail_trust_v2_1`
+- `v_rr_retail_trust_operacion_semanal_v2_1`
+- `v_rr_retail_trust_operacion_mensual_v2_1`
+- `v_rr_gerencial_v2_1_actual`
 
 ## Principio
 
 Streamlit debe leer estas vistas y no recalcular reglas de negocio con pandas.
 
-Cada archivo SQL debe incluir:
-
-- propósito;
-- grano de la vista;
-- definición de métricas;
-- dependencias;
-- validaciones asociadas.
+- MULTIMARCA se mide por rutas, personas, locales, puntos y carga.
+- PITUTO se mide por locales y combinaciones LOCAL/CLIENTE.
+- La dotación real PITUTO se incorporará únicamente desde su base externa.
+- Breden Master y Propal permanecen como servicios independientes.
