@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import ast
 import json
 import sys
 from pathlib import Path
@@ -14,13 +15,18 @@ if str(STREAMLIT_DIR) not in sys.path:
 
 from data_access import (  # noqa: E402
     get_metadata,
+    get_monthly_pituto,
     get_monthly_rt,
     get_monthly_services,
     get_periods,
+    get_pituto_client_region,
+    get_pituto_clients,
+    get_pituto_regions,
+    get_pituto_summary,
     get_regions,
     get_retail,
-    get_rt_modalities,
     get_rt_region_capacity,
+    get_rt_summary,
     get_services,
     get_snapshot,
 )
@@ -41,11 +47,11 @@ def test_streamlit_metadata_and_periods() -> None:
     assert len(periods) == EXPECTED["universo"]["periodos"]
 
 
-def test_snapshot_gerencial_v2() -> None:
+def test_snapshot_gerencial_v21() -> None:
     period = EXPECTED["periodo_referencia"]
     actual = get_snapshot(period).iloc[0]
-    services = get_services(period).set_index("servicio_operativo")
-    rt_modalities = get_rt_modalities(period).set_index("modalidad")
+    rt = get_rt_summary(period).iloc[0]
+    pituto = get_pituto_summary(period).iloc[0]
 
     assert actual["volumen_operativo"] == pytest.approx(
         EXPECTED["resumen_global"]["volumen_operativo"]
@@ -53,27 +59,20 @@ def test_snapshot_gerencial_v2() -> None:
     assert actual["locales_activos"] == EXPECTED["resumen_global"]["locales_activos"]
     assert actual["local_cliente"] == EXPECTED["resumen_global"]["local_cliente"]
 
-    assert set(services.index) == {"RETAIL TRUST", "BREDEN MASTER", "PROPAL"}
-    assert services["participacion_servicio_pct"].sum() == pytest.approx(
-        100.0,
-        abs=0.01,
+    assert rt["rutas_multimarca"] == EXPECTED["modalidades"]["MULTIMARCA"]["rutas_activas"]
+    assert rt["personas_multimarca"] == EXPECTED["modalidades"]["MULTIMARCA"]["personas_activas"]
+    assert rt["multimarca_locales"] == EXPECTED["modalidades"]["MULTIMARCA"]["locales_asignados"]
+    assert rt["multimarca_gestiones"] == EXPECTED["modalidades"]["MULTIMARCA"]["local_cliente_asignados"]
+
+    assert pituto["pituto_locales"] == EXPECTED["modalidades"]["PITUTO"]["locales_asignados"]
+    assert pituto["pituto_gestiones"] == EXPECTED["modalidades"]["PITUTO"]["local_cliente_asignados"]
+    assert pituto["pituto_carga"] == pytest.approx(
+        EXPECTED["modalidades"]["PITUTO"]["carga_asignada"]
     )
 
-    assert actual["personas_retail_trust"] == services.loc[
-        "RETAIL TRUST", "personas_activas"
-    ]
-    assert actual["personas_breden_master"] == services.loc[
-        "BREDEN MASTER", "personas_activas"
-    ]
-    assert actual["personas_propal"] == services.loc["PROPAL", "personas_activas"]
-
-    assert actual["carga_retail_trust"] <= (
-        rt_modalities.loc["MULTIMARCA", "carga_asignada"]
-        + rt_modalities.loc["PITUTO", "carga_asignada"]
-    )
-    assert actual["peso_multimarca_dentro_rt_pct"] + actual[
-        "peso_pituto_dentro_rt_pct"
-    ] == pytest.approx(100.0, abs=0.01)
+    assert actual["pituto_locales"] == pituto["pituto_locales"]
+    assert actual["pituto_gestiones"] == pituto["pituto_gestiones"]
+    assert actual["pituto_carga"] == pytest.approx(pituto["pituto_carga"])
 
 
 def test_retail_and_service_shares() -> None:
@@ -96,22 +95,29 @@ def test_retail_and_service_shares() -> None:
     )
 
 
-def test_retail_trust_modalities() -> None:
-    modalities = get_rt_modalities(EXPECTED["periodo_referencia"]).set_index(
-        "modalidad"
-    )
+def test_pituto_reconciles_by_client_and_region() -> None:
+    period = EXPECTED["periodo_referencia"]
+    summary = get_pituto_summary(period).iloc[0]
+    by_client = get_pituto_clients(period)
+    by_region = get_pituto_regions(period)
+    client_region = get_pituto_client_region(period)
 
-    assert set(modalities.index) == {"MULTIMARCA", "PITUTO"}
-    assert modalities["participacion_dentro_rt_pct"].sum() == pytest.approx(
+    assert by_client["pituto_gestiones"].sum() == summary["pituto_gestiones"]
+    assert by_client["pituto_carga"].sum() == pytest.approx(summary["pituto_carga"])
+    assert by_client["participacion_gestiones_pct"].sum() == pytest.approx(
         100.0,
         abs=0.01,
     )
-    assert modalities.loc["MULTIMARCA", "carga_asignada"] == pytest.approx(
-        EXPECTED["modalidades"]["MULTIMARCA"]["carga_asignada"]
+
+    assert by_region["pituto_gestiones"].sum() == summary["pituto_gestiones"]
+    assert by_region["pituto_carga"].sum() == pytest.approx(summary["pituto_carga"])
+    assert by_region["participacion_gestiones_pct"].sum() == pytest.approx(
+        100.0,
+        abs=0.01,
     )
-    assert modalities.loc["PITUTO", "personas_activas"] == EXPECTED[
-        "modalidades"
-    ]["PITUTO"]["personas_activas"]
+
+    assert client_region["pituto_gestiones"].sum() == summary["pituto_gestiones"]
+    assert client_region["pituto_carga"].sum() == pytest.approx(summary["pituto_carga"])
 
 
 def test_regional_reconciliation() -> None:
@@ -120,6 +126,7 @@ def test_regional_reconciliation() -> None:
     regions = get_regions(period)
     rt_regions = get_rt_region_capacity(period)
     services = get_services(period).set_index("servicio_operativo")
+    pituto = get_pituto_summary(period).iloc[0]
 
     assert regions["volumen_operativo"].sum() == pytest.approx(
         snapshot["volumen_operativo"]
@@ -135,24 +142,35 @@ def test_regional_reconciliation() -> None:
         100.0,
         abs=0.01,
     )
+    assert rt_regions["pituto_gestiones"].sum() == pituto["pituto_gestiones"]
+    assert rt_regions["pituto_carga"].sum() == pytest.approx(pituto["pituto_carga"])
 
 
-def test_monthly_service_model() -> None:
+def test_monthly_service_and_pituto_model() -> None:
     services = get_monthly_services()
     rt = get_monthly_rt()
+    pituto = get_monthly_pituto()
 
     assert services["month_label"].nunique() == 6
     assert rt["month_label"].nunique() == 6
+    assert pituto["month_label"].nunique() == 6
     assert set(services["servicio_operativo"].unique()) == {
         "RETAIL TRUST",
         "BREDEN MASTER",
         "PROPAL",
     }
+
     monthly_share = services.groupby("month_label")[
         "participacion_corte_pct"
     ].sum()
     assert (monthly_share - 100.0).abs().max() <= 0.01
-    assert (
-        rt["peso_multimarca_dentro_rt_pct"]
-        + rt["peso_pituto_dentro_rt_pct"]
-    ).sub(100.0).abs().max() <= 0.01
+
+    assert "personas_pituto_corte" not in rt.columns
+    assert "pituto_gestiones_corte" in rt.columns
+    assert "pituto_locales_corte" in rt.columns
+    assert "carga_por_ruta_mm_corte" in rt.columns
+
+
+def test_app_v21_compiles() -> None:
+    source = (STREAMLIT_DIR / "app_v2_1.py").read_text(encoding="utf-8")
+    ast.parse(source)
