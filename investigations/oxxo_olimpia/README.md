@@ -20,7 +20,12 @@ La extracción consulta rr_historico.sqlite mediante las vistas v_rr_periodos, v
 
 Desde la raíz del repositorio:
 
-python scripts/exportar_trazabilidad_oxxo_olimpia.py
+```powershell
+python -m pytest -q tests/test_trazabilidad_oxxo_olimpia.py tests/test_trazabilidad_oxxo_olimpia_v2.py
+python scripts/exportar_trazabilidad_oxxo_olimpia_v2.py
+```
+
+El launcher V2 corrige el caso en que la semana de mayor alta coincide con el último corte disponible.
 
 La salida se guarda en exports y se comprime en un ZIP listo para análisis en Claude.
 
